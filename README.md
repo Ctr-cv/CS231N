@@ -11,7 +11,8 @@ It includes implementations of neural network architectures, data processing scr
 
 ## Setup
 
-Follow these steps to set up a local Python environment, make sure you have global Python 3.11 installed.
+Follow these steps to set up a local Python environment.
+Make sure you have Python >= 3.7, <= 3.11, as autoreload is deprecated in 3.12.
 
 ```bash
 git clone <this-repo-url>
@@ -21,10 +22,10 @@ python -m venv venv
 venv\Scripts\activate
 # Linux/MacOS
 source venv/bin/activate
+
 pip install -r requirements.txt
-
-# For each assignment, replace dir path with path to this directory (same level as this README)
-
-# Assignment 1: run cs231n/datasets/script.py to download CIFAR-10 dataset
 ```
+## Notes for each assignment
+
+Assignment 1: run cs231n/datasets/script.py to download CIFAR-10 dataset
 
