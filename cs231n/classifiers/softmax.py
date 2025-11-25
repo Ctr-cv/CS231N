@@ -28,30 +28,18 @@ def softmax_loss_naive(W, X, y, reg):
     # compute the loss and the gradient
     num_classes = W.shape[1]
     num_train = X.shape[0]
+    
     for i in range(num_train):
-        scores = X[i].dot(W)
+        y_hat = X[i] @ W                    # raw scores vector of size C
+        y_exp = np.exp(y_hat - y_hat.max()) # Subtract max (for numerical stability), then exponentiate
+        softmax = y_exp / y_exp.sum()       # standardize to produce softmax probabilities
+        loss -= np.log(softmax[y[i]])       # y[i] holds label for i-th example. We extract the prob. of the correct class
+                                             # and accumulate the negative log prob. to loss
+        softmax[y[i]] -= 1                  # update for gradient. Remember gradient is P_j - I(j = y_i)
+        dW += np.outer(X[i], softmax)       # Multiply gradient with input vector to get contributuion to dW from i-th example
 
-        # compute the probabilities in numerically stable way
-        scores -= np.max(scores)
-        p = np.exp(scores)
-        p /= p.sum()  # normalize
-        logp = np.log(p)
-
-        loss -= logp[y[i]]  # negative log probability is the loss
-
-
-    # normalized hinge loss plus regularization
-    loss = loss / num_train + reg * np.sum(W * W)
-
-    #############################################################################
-    # TODO:                                                                     #
-    # Compute the gradient of the loss function and store it dW.                #
-    # Rather that first computing the loss and then computing the derivative,   #
-    # it may be simpler to compute the derivative at the same time that the     #
-    # loss is being computed. As a result you may need to modify some of the    #
-    # code above to compute the gradient.                                       #
-    #############################################################################
-
+    loss = loss / num_train + reg * np.sum(W**2)    # average loss and regularize 
+    dW = dW / num_train + 2 * reg * W               # finish calculating gradient
 
     return loss, dW
 
@@ -65,8 +53,19 @@ def softmax_loss_vectorized(W, X, y, reg):
     # Initialize the loss and gradient to zero.
     loss = 0.0
     dW = np.zeros_like(W)
+    
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
 
-
+    scores = X @ W   # Vectorized probabilities of shape (N, C)
+    scores_exp = np.exp(scores - np.max(scores, axis=1, keepdims=True))  # Subtract max, vectorized. Note each row is an example, we take off max of each class in all examples.
+    softmax = scores_exp / np.sum(scores_exp, axis=1, keepdims=True)  # Vectorized softmax probabilities. 
+    loss -= np.sum(np.log(softmax[np.arange(num_train), y]))  # Vectorized loss calculation. Extract correct class probabilities for all examples at once.
+    softmax[np.arange(num_train), y] -= 1  # Vectorized gradient update. Subtract 1 from correct class probabilities for all examples at once.
+    dW = X.T @ softmax  # Vectorized gradient calculation.
+    
+    loss = loss / num_train + reg * np.sum(W**2)
+    dW = dW / num_train + 2 * reg * W
     #############################################################################
     # TODO:                                                                     #
     # Implement a vectorized version of the softmax loss, storing the           #
