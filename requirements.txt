@@ -3,3 +3,4 @@ matplotlib
 imageio
 six
 future
+scipy
