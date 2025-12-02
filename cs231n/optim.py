@@ -57,17 +57,17 @@ def sgd_momentum(w, dw, config=None):
       moving average of the gradients.
     """
     if config is None:
-        config = {}
-    config.setdefault("learning_rate", 1e-2)
+      config = {}
+      config.setdefault("learning_rate", 1e-2)
     config.setdefault("momentum", 0.9)
     v = config.get("velocity", np.zeros_like(w))
-
     next_w = None
     ###########################################################################
     # TODO: Implement the momentum update formula. Store the updated value in #
     # the next_w variable. You should also use and update the velocity v.     #
     ###########################################################################
-
+    v = config.get("momentum") * v - config.get("learning_rate") * dw
+    next_w = w + v
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -101,7 +101,13 @@ def rmsprop(w, dw, config=None):
     # in the next_w variable. Don't forget to update cache value stored in    #
     # config['cache'].                                                        #
     ###########################################################################
+    lr = config["learning_rate"]
+    dr = config["decay_rate"]
+    epsilon = config["epsilon"]
+    cache = config["cache"]
 
+    config["cache"] = dr * cache + (1 - dr) * (dw ** 2)
+    next_w = w - lr * dw / (np.sqrt(config["cache"])) + epsilon
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -142,7 +148,16 @@ def adam(w, dw, config=None):
     # NOTE: In order to match the reference output, please modify t _before_  #
     # using it in any calculations.                                           #
     ###########################################################################
+    config["t"] += 1 # Time step
+    t = config["t"]
 
+    mt = config["beta1"] * config["m"] + (1 - config["beta1"]) * dw
+    vt = config["beta2"] * config["v"] + (1 - config["beta2"]) * (dw ** 2)
+    config['m'] = mt
+    config['v'] = vt
+    mt = mt / (1 - (config["beta1"] ** t))
+    vt = vt / (1 - (config["beta2"] ** t))
+    next_w = w - ((config["learning_rate"] * mt) / (np.sqrt(vt) + config["epsilon"]))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

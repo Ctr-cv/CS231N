@@ -218,8 +218,8 @@ class FullyConnectedNet(object):
         for i in range (self.num_layers - 1):
            self.params['W' + str(i+1)] = np.random.randn(input_dim if i == 0 else hidden_dims[i-1], hidden_dims[i]) * weight_scale
            self.params['b' + str(i+1)] = np.zeros(hidden_dims[i]) * weight_scale
-        self.params['W' + str(self.num_layers - 1)] = np.random.randn(hidden_dims[self.num_layers - 2], num_classes) * weight_scale
-        self.params['b' + str(self.num_layers - 1)] = np.zeros(num_classes) * weight_scale
+        self.params['W' + str(self.num_layers)] = np.random.randn(hidden_dims[self.num_layers - 2], num_classes) * weight_scale
+        self.params['b' + str(self.num_layers)] = np.zeros(num_classes) * weight_scale
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -291,8 +291,6 @@ class FullyConnectedNet(object):
         ############################################################################
         out = []   # size num_layers - 1
         cache = [] # size num_layers - 1 + cachef
-        W = []     # size num_layers - 1 + wf
-        B = []     # size num_layers - 1 + bf
         for i in range (self.num_layers - 1):
             w = self.params['W' + str(i+1)]
             b = self.params['b' + str(i+1)]
@@ -300,10 +298,8 @@ class FullyConnectedNet(object):
             out.append(out1)
             cache.append(cache1)
             X = out1
-            W.append(w)
-            B.append(b)
-        wf = self.params['W' + str(self.num_layers - 1)]
-        bf = self.params['b' + str(self.num_layers - 1)]
+        wf = self.params['W' + str(self.num_layers)]
+        bf = self.params['b' + str(self.num_layers)]
         scores, cachef = affine_forward(X, wf, bf)
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -334,13 +330,15 @@ class FullyConnectedNet(object):
         reg_term += np.sum(wf ** 2)
         grads['W' + str(self.num_layers)] = dwf
         grads['b' + str(self.num_layers)] = dbf
+        dwf += self.reg * wf
         for i in range (self.num_layers - 2, -1, -1):
-           reg_term += np.sum(W[i] ** 2)
-           dx, dw, df = affine_relu_backward(dx, cache[i])
-           dw += self.reg * W[i]
+           w = self.params['W' + str(i+1)]
+           reg_term += np.sum(w ** 2)
+           dx, dw, db = affine_relu_backward(dx, cache[i])
+           dw += self.reg * w
            grads['W' + str(i+1)] = dw
-           grads['b' + str(i+1)] = df
-
+           grads['b' + str(i+1)] = db
+        loss += 0.5 * self.reg * reg_term
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
