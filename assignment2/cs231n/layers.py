@@ -194,7 +194,19 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # Referencing the original paper (https://arxiv.org/abs/1502.03167)   #
         # might prove to be helpful.                                          #
         #######################################################################
-        pass
+        mu = x.mean(axis=0)
+        var = x.var(axis=0)
+        std = np.sqrt(var + eps)    # Batch standard deviation
+        x_hat = (x - mu) / std      # Perform normalization
+        out = gamma * x_hat + beta  # Scale and shifted x_hat
+
+        shape = bn_param.get('shape', (N, D))  # Reshape used in backprop
+        axis = bn_param.get('axis', 0)          # Axis to sum used in backprop
+        cache = x, mu, var, std, gamma, x_hat, shape, axis  # Save for backprop
+
+        if axis == 0:
+            running_mean = momentum * running_mean + (1 - momentum) * mu
+            running_var = momentum * running_var + (1 - momentum) * var
         #######################################################################
         #                           END OF YOUR CODE                          #
         #######################################################################
@@ -205,7 +217,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # then scale and shift the normalized data using gamma and beta.      #
         # Store the result in the out variable.                               #
         #######################################################################
-        pass
+        x_hat = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_hat + beta
         #######################################################################
         #                          END OF YOUR CODE                           #
         #######################################################################
@@ -242,7 +255,19 @@ def batchnorm_backward(dout, cache):
     # Referencing the original paper (https://arxiv.org/abs/1502.03167)       #
     # might prove to be helpful.                                              #
     ###########################################################################
-    # 
+    x, mu, var, std, gamma, x_hat, shape, axis = cache
+    dbeta = dout.reshape(shape, order='F').sum(axis)
+    dgamma = (dout * x_hat).reshape(shape, order='F').sum(axis) 
+
+    # Reverse process
+    dx_hat = dout * gamma
+    dstd = -np.sum(dx_hat * (x-mu), axis=0) / (std**2)  # derivative w.r.t std
+    dvar = 0.5*dstd / std  # derivative wrt var
+    dx1 = dx_hat / std + 2 * (x-mu) * dvar / len(dout)  # partial derivative wrt dx
+    dmu = -np.sum(dx1, axis=0)  # derivative wrt mu
+    dx2 = dmu / len(dout)       # partial derivative wrt dx
+    dx = dx1 + dx2
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

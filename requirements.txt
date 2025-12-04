@@ -4,3 +4,4 @@ imageio
 six
 future
 scipy
+ipykernel
