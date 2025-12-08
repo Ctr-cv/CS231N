@@ -23,7 +23,8 @@ def affine_forward(x, w, b):
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
-    # 
+    x_reshaped = x.reshape(x.shape[0], -1)
+    out = x_reshaped.dot(w) + b
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -51,7 +52,10 @@ def affine_backward(dout, cache):
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
-    # 
+    x_reshaped = x.reshape(x.shape[0], -1)  # (N, D)
+    dx = (dout @ w.T).reshape(x.shape[0], *x.shape[1:])  # (N, D) -> (N, d1, ..., d_k) 
+    dw = x_reshaped.T @ dout # (D, N) @ (N, M) -> (D, M)
+    db = np.sum(dout, axis=0) # (M,)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -72,7 +76,7 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
-    # 
+    out = np.maximum(0, x)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -94,7 +98,7 @@ def relu_backward(dout, cache):
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
-    # 
+    dx = dout * (x > 0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -297,7 +301,14 @@ def batchnorm_backward_alt(dout, cache):
     # should be able to compute gradients with respect to the inputs in a     #
     # single statement; our implementation fits on a single 80-character line.#
     ###########################################################################
-    # 
+    _, _, _, std, gamma, x_hat, shape, axis = cache # expand cache
+    S = lambda x: x.sum(axis=0)                     # helper function
+    dbeta = dout.reshape(shape, order='F').sum(axis)            # derivative w.r.t. beta
+    dgamma = (dout * x_hat).reshape(shape, order='F').sum(axis) # derivative w.r.t. gamma
+
+    # This derivative is confusing af (at least for me), walk through it with ChatGPT/Gemini for explanations
+    dx = dout * gamma / (len(dout) * std)          # temporarily initialize scale value
+    dx = len(dout)*dx  - S(dx*x_hat)*x_hat - S(dx) # derivative w.r.t. unnormalized x
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
