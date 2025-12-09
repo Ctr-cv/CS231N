@@ -123,7 +123,12 @@ def softmax_loss(x, y):
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
-    # 
+    N = len(y)
+    P = np.exp(x - x.max(axis=1, keepdims=True))  # numerically stable softmax, first subtract all by max then take exponent
+    P /= P.sum(axis=1, keepdims=True)  # normalize to get probabilities for each class
+    loss = -np.log(P[range(N), y]).sum() / N  # average cross-entropy loss
+    P[range(N), y] -= 1  # gradient of loss w.r.t. scores
+    dx = P / N
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -339,9 +344,10 @@ def layernorm_forward(x, gamma, beta, ln_param):
     """
     out, cache = None, None
     eps = ln_param.get("eps", 1e-5)
+
     ###########################################################################
     # TODO: Implement the training-time forward pass for layer norm.          #
-    # Normalize the incoming data, and scale and  shift the normalized data   #
+    # Normalize the incoming data, and scale and shift the normalized data   #
     #  using gamma and beta.                                                  #
     # HINT: this can be done by slightly modifying your training-time         #
     # implementation of  batch normalization, and inserting a line or two of  #
@@ -349,7 +355,12 @@ def layernorm_forward(x, gamma, beta, ln_param):
     # transformations you could perform, that would enable you to copy over   #
     # the batch norm code and leave it almost unchanged?                      #
     ###########################################################################
-    # 
+    bn_param = {"mode": "train", "axis": 1, **ln_param} # same as batchnorm in train mode + over which axis to sum for grad
+    [gamma, beta] = np.atleast_2d(gamma, beta)          # assure 2D to perform transpose
+
+    out, cache = batchnorm_forward(x.T, gamma.T, beta.T, bn_param) # same as batchnorm
+    out = out.T                                                    # transpose back # Save for backprop
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -379,7 +390,8 @@ def layernorm_backward(dout, cache):
     # implementation of batch normalization. The hints to the forward pass    #
     # still apply!                                                            #
     ###########################################################################
-    # 
+    dx, dgamma, dbeta = batchnorm_backward_alt(dout.T, cache)
+    dx = dx.T
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

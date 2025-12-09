@@ -38,9 +38,9 @@ def batchnorm_relu_forward(x, w, b, gamma=None, beta=None, bn_param=None):
 def batchnorm_relu_backward(dout, cache):
     fc_cache, norm_cache, relu_cache = cache
     da = relu_backward(dout, relu_cache)
-    dout = batchnorm_backward_alt(da, norm_cache)
+    dout, dgamma, dbeta = batchnorm_backward_alt(da, norm_cache)
     dx, dw, db = affine_backward(dout, fc_cache)
-    return dx, dw, db
+    return dx, dw, db, dgamma, dbeta
 
 def conv_relu_forward(x, w, b, conv_param):
     """
