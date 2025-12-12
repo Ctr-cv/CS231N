@@ -61,7 +61,13 @@ class ThreeLayerConvNet(object):
         # **the width and height of the input are preserved**. Take a look at      #
         # the start of the loss() function to see how that happens.                #
         ############################################################################
-        # 
+        self.input_dim = input_dim
+        self.num_filters = num_filters
+        self.filter_size = filter_size
+        self.hidden_dim = hidden_dim
+        self.num_classes = num_classes
+        self.weight_scale = weight_scale
+        self.reg = reg
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
