@@ -509,7 +509,34 @@ def conv_forward_naive(x, w, b, conv_param):
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    # 
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    x_pad = np.pad(x, ((0,0), (0,0), (pad,pad), (pad,pad)))
+    H_prime = 1 + (H + 2 * pad - HH) // stride # Use integer division
+    W_prime = 1 + (W + 2 * pad - WW) // stride # Use integer division
+    out = np.zeros((N, F, H_prime, W_prime))
+    for n in range(N):          # Iterate over each image in the batch
+        for f in range(F):      # Iterate over each filter (output feature map)
+            for i in range(H_prime): # Iterate over output height
+                for j in range(W_prime): # Iterate over output width
+                    h_start = i * stride
+                    w_start = j * stride
+                    h_end = h_start + HH
+                    w_end = w_start + WW
+                    conv_sum = 0
+                    for c in range(C):
+                        for hh in range(HH):
+                            for ww in range(WW):
+                                # Note: Must use x_padded coordinates for x
+                                conv_sum += x_pad[n, c, h_start + hh, w_start + ww] * w[f, c, hh, ww]
+                    out[n, f, i, j] = conv_sum
+
+    # --- 4. Bias Addition ---
+    # Broadcast the bias (F,) across all N, H', W' dimensions
+    for f in range(F):
+        out[:, f, :, :] += b[f]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -533,7 +560,42 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    # 
+    x, w, b, conv_param = cache
+    stride = conv_param["stride"]
+    pad = conv_param["pad"]
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    N, F, H_prime, W_prime = dout.shape
+
+    # Init to necessary shapes
+    dx = np.zeros_like(x)
+    dw = np.zeros_like(w)
+    db = np.zeros_like(b)
+
+    # 1. Calculate db
+    db = np.sum(dout, axis=(0, 2, 3))  # Along number, length, width axis
+
+    # 2. Pad input
+    x_pad = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)))
+    dx_pad = np.zeros_like(x_pad)
+
+    # 3. Loop to calculate dw and dx
+    for n in range(N):          # Iterate over each image in the batch
+      for f in range(F):      # Iterate over each filter (output feature map)
+          for i in range(H_prime): # Iterate over output height
+              for j in range(W_prime): # Iterate over output width
+                  h_start = i * stride
+                  h_end = h_start + HH
+                  w_start = j * stride
+                  w_end = w_start + WW
+
+                  dw[f] += x_pad[n, :, h_start:h_end, w_start:w_end] * dout[n, f, i, j]
+                  dx_pad[n, :, h_start:h_end, w_start:w_end] += w[f] * dout[n, f, i, j]
+
+    # 4. Remove padding
+    if pad == 0: dx = dx_pad
+    else: dx = dx_pad[:, :, pad:-pad, pad:-pad]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
