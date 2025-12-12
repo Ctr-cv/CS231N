@@ -11,6 +11,7 @@ except ImportError:
     # print("\tThe instructions to do this will be given in a section of the notebook below.")
 
 from .im2col import *
+from im2col_cython import col2im_6d_cython
 
 
 def conv_forward_im2col(x, w, b, conv_param):

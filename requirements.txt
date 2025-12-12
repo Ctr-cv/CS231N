@@ -5,3 +5,4 @@ six
 future
 scipy
 ipykernel
+cython

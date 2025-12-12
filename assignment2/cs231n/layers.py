@@ -626,13 +626,28 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # TODO: Implement the max-pooling forward pass                            #
     ###########################################################################
-    # 
+    pool_height = pool_param.get("pool_height", 2)
+    pool_width = pool_param.get("pool_width", 2)
+    stride = pool_param.get("stride", 2)
+    N, C, H, W = x.shape
+    H_prime = 1 + (H - pool_height) // stride
+    W_prime = 1 + (W - pool_width) // stride
+    out = np.zeros((N, C, H_prime, W_prime))
+    for n in range (N):
+        for c in range (C):
+            for w in range (W_prime):
+                for h in range (H_prime):
+                    w_start = w * stride
+                    w_end = w_start + pool_width
+                    h_start = h * stride
+                    h_end = h_start + pool_height
+                    out[n, c, h, w] = np.max(x[n, c, h_start:h_end, w_start:w_end])
+            
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     cache = (x, pool_param)
     return out, cache
-
 
 def max_pool_backward_naive(dout, cache):
     """A naive implementation of the backward pass for a max-pooling layer.
@@ -648,7 +663,27 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the max-pooling backward pass                           #
     ###########################################################################
-    # 
+    x, pool_param = cache
+    N, C, H, W = x.shape
+    N, C, H_prime, W_prime = dout.shape
+    pool_height = pool_param.get("pool_height", 2)
+    pool_width = pool_param.get("pool_width", 2)
+    stride = pool_param.get("stride", 2)
+    dx = np.zeros((N, C, H, W))
+    for n in range (N):
+        for c in range (C):
+            for h in range (H_prime):
+                for w in range (W_prime):
+                    w_start = w * stride
+                    w_end = w_start + pool_width
+                    h_start = h * stride
+                    h_end = h_start + pool_height
+
+                    # Previous window for current dout
+                    x_window = x[n, c, h_start:h_end, w_start:w_end]
+                    max_val = np.max(x_window)
+                    mask = (x_window == max_val)  # same shape as x_window
+                    dx[n, c, h_start:h_end, w_start:w_end] += mask * dout[n, c, h, w]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
