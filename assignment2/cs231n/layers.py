@@ -792,7 +792,14 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     # the bulk of the code is similar to both train-time batch normalization  #
     # and layer normalization!                                                #
     ###########################################################################
-    # 
+    N, C, H, W = x.shape
+    ln_param = {"eps": eps, "shape": (W, H, C, N), "axis":(0, 1, 3)}
+    x = x.reshape(N*G, -1)  # Row: N*G, Column: C/G * H * W
+    gamma = np.tile(gamma, (N, 1, H, W)).reshape(N*G, -1)     # reshape gamma to use vanilla layernorm
+    beta = np.tile(beta, (N, 1, H, W)).reshape(N*G, -1)
+    out, cache = layernorm_forward(x, gamma, beta, ln_param)
+    out = out.reshape(N, C, H, W)
+    cache = (G, cache)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -817,7 +824,14 @@ def spatial_groupnorm_backward(dout, cache):
     # TODO: Implement the backward pass for spatial group normalization.      #
     # This will be extremely similar to the layer norm implementation.        #
     ###########################################################################
-    # 
+    G, cache = cache
+    N, C, H, W = dout.shape
+    dout = dout.reshape(N*G, -1)
+
+    dx, dgamma, dbeta = layernorm_backward(dout, cache)
+    dx = dx.reshape(N, C, H, W)
+    dbeta = dbeta[None, :, None, None]
+    dgamma = dgamma[None, :, None, None]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
