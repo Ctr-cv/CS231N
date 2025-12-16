@@ -720,7 +720,10 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # vanilla version of batch normalization you implemented above.           #
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
-    # 
+    N, C, H, W = x.shape                                     # input dims
+    x = np.moveaxis(x, 1, -1).reshape(-1, C)                 # swap axes to use vanilla batchnorm
+    out, cache = batchnorm_forward(x, gamma, beta, bn_param) # perform vanilla batchnorm
+    out = np.moveaxis(out.reshape(N, H, W, C), -1, 1)  
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -749,7 +752,10 @@ def spatial_batchnorm_backward(dout, cache):
     # vanilla version of batch normalization you implemented above.           #
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
-    # 
+    N, C, H, W = dout.shape                             # upstream dims
+    dout = np.moveaxis(dout, 1, -1).reshape(-1, C)      # swap axes to use vanilla batchnorm backprop
+    dx, dgamma, dbeta = batchnorm_backward(dout, cache) # perform vanilla batchnorm backprop
+    dx = np.moveaxis(dx.reshape(N, H, W, C), -1, 1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
