@@ -26,3 +26,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Notes
+### Assignment 2
+- If using CPU for Pytorch, remove the index-url line in requirements.txt and change to regular torch, torchvision. W/O versions is fine.
+
