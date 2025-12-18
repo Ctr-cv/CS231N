@@ -58,22 +58,22 @@ def deprocess_image(img, rescale=False):
 
 
 def image_from_url(url):
-    """
-    Read an image from a URL. Returns a numpy array with the pixel data.
-    We write the image to a temporary file then read it back. Kinda gross.
-    """
+    fname = None
     try:
-        f = urllib.request.urlopen(url)
-        _, fname = tempfile.mkstemp()
-        with open(fname, "wb") as ff:
-            ff.write(f.read())
-        img = imread(fname)
-        os.remove(fname)
+        req = urllib.request.urlopen(url)
+        # fd is the low-level file descriptor that must be closed
+        fd, fname = tempfile.mkstemp() 
+        with os.fdopen(fd, "wb") as ff:
+            ff.write(req.read())
+        
+        img = np.array(imread(fname)) # Load into memory
         return img
-    except urllib.error.URLError as e:
-        print("URL Error: ", e.reason, url)
-    except urllib.error.HTTPError as e:
-        print("HTTP Error: ", e.code, url)
+    except Exception as e:
+        print(f"Error: {e}")
+        return np.zeros((224, 224, 3), dtype=np.uint8)
+    finally:
+        if fname and os.path.exists(fname):
+            os.remove(fname) # Now works because os.fdopen(fd) closed the lock
 
 
 def load_image(filename, size=None):

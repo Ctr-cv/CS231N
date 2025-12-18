@@ -21,6 +21,7 @@ Thumbs.db
 data/
 *.csv
 *.npz
+assignment2/cs231n/datasets/coco_captioning/
 
 # IDEs
 .vscode/
