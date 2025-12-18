@@ -138,7 +138,15 @@ class CaptioningRNN:
         #                                                                          #
         # You also don't have to implement the backward pass.                      #
         ############################################################################
-        # 
+        hidden = affine_forward(features, W_proj, b_proj)  # Shape: (N, H)
+        words = word_embedding_forward(captions_in, W_embed)   # Shape: (N, T, W)
+        hidden_states = None
+        if (self.cell_type == "rnn"):
+            hidden_states = rnn_forward(words, hidden, Wx, Wh, b) # Shape: (N, T, H)
+        else:
+            hidden_states = lstm_forward(words, hidden, Wx, Wh, b)
+        scores = temporal_affine_forward(hidden_states, W_vocab, b_vocab)  # Shape: (N, T, V)
+        loss = temporal_softmax_loss(scores, captions_out, mask=mask)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -202,7 +210,20 @@ class CaptioningRNN:
         # NOTE: we are still working over minibatches in this function. Also if   #
         # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
-        # 
+        N, length = captions.shape
+        current_word_idx = self._start * torch.ones(N, dtype=torch.long, device=features.device)
+        prev_h = features @ W_proj + b_proj
+        prev_c = torch.zeros_like(prev_h) if self.cell_type == "lstm" else None
+        for t in range (length):
+            word_embed = W_embed[current_word_idx]
+            if self.cell_type == "rnn":
+              prev_h = rnn_step_forward(word_embed, prev_h, Wx, Wh, b)
+            else:
+              prev_h, prev_c = lstm_step_forward(word_embed, prev_h, prev_c, Wx, Wh, b)
+            scores = prev_h @ W_vocab + b_vocab
+            current_word_idx = torch.argmax(scores, dim=1)
+            captions[:, t] = current_word_idx
+                
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

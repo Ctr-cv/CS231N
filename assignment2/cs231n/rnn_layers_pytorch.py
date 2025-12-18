@@ -1,6 +1,7 @@
 """This file defines layer types that are commonly used for recurrent neural networks.
 """
 import torch
+import torch.nn as nn
 
 
 def affine_forward(x, w, b):
@@ -43,7 +44,7 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     ##############################################################################
     # TODO: Implement a single forward step for the vanilla RNN.                 #
     ##############################################################################
-    # 
+    next_h = torch.tanh(x @ Wx + prev_h @ Wh + b)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -73,7 +74,14 @@ def rnn_forward(x, h0, Wx, Wh, b):
     # input data. You should use the rnn_step_forward function that you defined  #
     # above. You can use a for loop to help compute the forward pass.            #
     ##############################################################################
-    # 
+    N, T, D = x.shape
+    D, H = h0.shape
+    prev_h = h0
+    h = torch.zeros((N, T, H), device=x.device, dtype=x.dtype)
+    for t in range(T):
+        xt = x[:, t, :]
+        prev_h = rnn_step_forward(xt, prev_h, Wx, Wh, b)
+        h[:, t, :] = prev_h
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -101,7 +109,7 @@ def word_embedding_forward(x, W):
     #                                                                            #
     # HINT: This can be done in one line using Pytorch's array indexing.         #
     ##############################################################################
-    # 
+    out = W[x]
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -227,7 +235,7 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
     y_flat = y.reshape(N * T)
     mask_flat = mask.reshape(N * T)
 
-    loss = torch.nn.functional.cross_entropy(x_flat, y_flat, reduction='none')
+    loss = torch.nn.functional.cross_entropy(x_flat, y_flat.long(), reduction='none')
     loss = loss * mask_flat.float()
     loss = loss.sum() / N
 
