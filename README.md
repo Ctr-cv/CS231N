@@ -30,4 +30,6 @@ pip install -r requirements.txt
 ### Assignment 2
 - If using CPU for Pytorch, remove the index-url line in requirements.txt and change to regular torch, torchvision. W/O versions is fine.
 - On Q5, you'll need to run the `get_coco_dataset.sh' manually since the notebook doesn't run it automatically.
+### Assignment 3
+- Same setup for Q1, run the .sh file. Or you can configure the code to use the previous local datasets, I jus wanted to make things cleaner
 
