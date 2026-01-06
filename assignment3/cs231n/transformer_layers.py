@@ -155,7 +155,20 @@ class MultiHeadAttention(nn.Module):
         #     prevent a value from influencing output. Specifically, the PyTorch   #
         #     function masked_fill may come in handy.                              #
         ############################################################################
+        H = self.n_head
+        D = E // H
+        q = self.query(query).view(N, S, H, D).moveaxis(1, 2)    # (N, H, S, D)
+        k = self.key(key).view(N, T, H, D).moveaxis(1, 2)      # (N, H, T, D)
+        v = self.value(value).view(N, T, H, D).moveaxis(1, 2)    # (N, H, T, D)
 
+        key_t = k.transpose(2, 3)   # Shape: (N, H, D, T)
+        scores = torch.matmul(q, key_t) / math.sqrt(self.head_dim) # (N, H, S, T)
+        if attn_mask is not None:
+            scores = scores.masked_fill(attn_mask == 0, float('-inf'))
+        attn_weights = self.attn_drop(torch.softmax(scores, dim = -1)) # (N, H, S, T)
+        output = torch.matmul(attn_weights, v) # (N, H, S, D)
+        output = output.transpose(1, 2).contiguous().view(N, S, E)
+        output = self.proj(output)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

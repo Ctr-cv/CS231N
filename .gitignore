@@ -22,6 +22,7 @@ data/
 *.csv
 *.npz
 assignment2/cs231n/datasets/coco_captioning/
+assignment3/cs231n/datasets/coco_captioning/
 
 # IDEs
 .vscode/
