@@ -159,20 +159,18 @@ class MultiHeadAttention(nn.Module):
         #     prevent a value from influencing output. Specifically, the PyTorch   #
         #     function masked_fill may come in handy.                              #
         ############################################################################
+        # N=1, H=2, S=T=3, D=4, and E=8.
         H = self.n_head
         D = E // H
         q = self.query(query).view(N, S, H, D).moveaxis(1, 2)    # (N, H, S, D)
         k = self.key(key).view(N, T, H, D).moveaxis(1, 2)      # (N, H, T, D)
         v = self.value(value).view(N, T, H, D).moveaxis(1, 2)    # (N, H, T, D)
-
         key_t = k.transpose(2, 3)   # Shape: (N, H, D, T)
         scores = torch.matmul(q, key_t) / math.sqrt(self.head_dim) # (N, H, S, T)
         if attn_mask is not None:
             scores = scores.masked_fill(attn_mask == 0, float('-inf'))
-        attn_weights = self.attn_drop(torch.softmax(scores, dim = -1)) # (N, H, S, T)
-        output = torch.matmul(attn_weights, v) # (N, H, S, D)
-        output = output.transpose(1, 2).contiguous().view(N, S, E)
-        output = self.proj(output)
+        output = self.attn_drop(F.softmax(scores, dim=-1)) @ v
+        output = self.proj(output.moveaxis(1, 2).reshape(N, S, E))
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -262,19 +260,29 @@ class TransformerDecoderLayer(nn.Module):
         tgt = self.dropout_self(tgt)
         tgt = tgt + shortcut
         tgt = self.norm_self(tgt)
-
+        print(tgt.shape)
         ############################################################################
         # TODO: Complete the decoder layer by implementing the remaining two       #
         # sublayers: (1) the cross-attention block using the encoder output as     #
         # memory, and (2) the feedforward block. Each block should follow the      #
         # same structure as self-attention implemented just above.                 #
         ############################################################################
-
+        shortcut = tgt
+        tgt = self.cross_attn(query=tgt, key=memory, value=memory)
+        tgt = self.dropout_cross(tgt)
+        tgt = tgt + shortcut
+        tgt = self.norm_cross(tgt)
+        print(tgt.shape)
+        shortcut = tgt
+        tgt = self.ffn(tgt)
+        tgt = self.dropout_ffn(tgt)
+        tgt = tgt + shortcut
+        out = self.norm_ffn(tgt)
+        print(out.shape)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
-        return tgt
+        return out
 
 
 class PatchEmbedding(nn.Module):
