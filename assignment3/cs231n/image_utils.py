@@ -58,11 +58,15 @@ def image_from_url(url):
     """
     try:
         f = urllib.request.urlopen(url)
-        _, fname = tempfile.mkstemp()
-        with open(fname, "wb") as ff:
-            ff.write(f.read())
-        img = imread(fname)
-        os.remove(fname)
+        fd, fname = tempfile.mkstemp()
+        try:
+            os.close(fd) # Close the low-level handle IMMEDIATELY
+            with open(fname, "wb") as ff:
+                ff.write(f.read())
+            img = imread(fname)
+        finally:
+            if os.path.exists(fname):
+                os.remove(fname)
         return img
     except urllib.error.URLError as e:
         print("URL Error: ", e.reason, url)

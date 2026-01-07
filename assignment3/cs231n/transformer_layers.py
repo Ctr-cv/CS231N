@@ -333,7 +333,12 @@ class PatchEmbedding(nn.Module):
         # step. Once the patches are flattened, embed them into latent vectors     #
         # using the projection layer.                                              #
         ############################################################################
+        P = self.patch_size
+        patches = x.view(N, C, H // P, P, W // P, P)
+        patches = patches.permute(0, 2, 4, 1, 3, 5).contiguous()  # Ensures memory layout is valid
+        patches = patches.view(N, self.num_patches, self.patch_dim)
 
+        out = self.proj(patches)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -382,6 +387,17 @@ class TransformerEncoderLayer(nn.Module):
         # by a feedforward block. This code will be very similar to decoder layer. #
         ############################################################################
 
+        residual = src
+        src = self.self_attn(src, src, src, src_mask)
+        src = self.dropout_self(src)
+        src = src + residual
+        src = self.norm_self(src)
+
+        residual = src
+        src = self.ffn(src)
+        src = self.dropout_ffn(src)
+        src = src + residual
+        src = self.norm_ffn(src)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
