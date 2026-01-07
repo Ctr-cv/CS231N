@@ -260,7 +260,6 @@ class TransformerDecoderLayer(nn.Module):
         tgt = self.dropout_self(tgt)
         tgt = tgt + shortcut
         tgt = self.norm_self(tgt)
-        print(tgt.shape)
         ############################################################################
         # TODO: Complete the decoder layer by implementing the remaining two       #
         # sublayers: (1) the cross-attention block using the encoder output as     #
@@ -272,13 +271,11 @@ class TransformerDecoderLayer(nn.Module):
         tgt = self.dropout_cross(tgt)
         tgt = tgt + shortcut
         tgt = self.norm_cross(tgt)
-        print(tgt.shape)
         shortcut = tgt
         tgt = self.ffn(tgt)
         tgt = self.dropout_ffn(tgt)
         tgt = tgt + shortcut
         out = self.norm_ffn(tgt)
-        print(out.shape)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
