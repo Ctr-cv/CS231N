@@ -289,7 +289,15 @@ class Unet(nn.Module):
         #      skip connection from the downsampling path.
         #    - Make sure to pass the context to each ResNet block.
         ##################################################################
-        
+        residual = []
+        for down_block in self.downs:
+            residual.append([x := b(x, context) for b in down_block[:-1]])  # IN addition to appending, updates x
+            x = down_block[-1](x)
+        x = self.mid_block2(self.mid_block1(x, context), context)
+        for up_block, xs_down in zip(self.ups, reversed(residual)):
+            x, pairs = up_block[0](x), zip(up_block[1:], xs_down[::-1])
+            [x := b(torch.cat([x, x0], dim=1), context) for b, x0 in pairs]
+            
         ##################################################################
 
         # Final block
