@@ -32,4 +32,5 @@ pip install -r requirements.txt
 - On Q5, you'll need to run the `get_coco_dataset.sh' manually since the notebook doesn't run it automatically.
 ### Assignment 3
 - Same setup for Q1, run the .sh file. Or you can configure the code to use the previous local datasets, I jus wanted to make things cleaner
+- For Q3 final diffusion model, ensure you're using a strong enough GPU. For reference, it took me 4.5 hours to train on a Laptop 4070.
 
